@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><style>
+@font-face { font-family: 'Spookyy'; src: url('Spookyy.otf') format('opentype'); }
+* { box-sizing: border-box; }
+html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; background: transparent; font-family: 'Spookyy', sans-serif; }
+
+/* ---- overhead tags ---- */
+.tag { position: absolute; transform: translate(-50%, -100%); white-space: nowrap; pointer-events: none;
+  font-size: 26px; color: #fff; }
+
+/* ---- panel ---- */
+.moving { background: linear-gradient(90deg, #ff2d6f, #ffb300, #00e5ff, #a000ff, #ff2d6f); background-size: 300% 100%; animation: move 5s linear infinite; }
+@keyframes move { to { background-position: 300% 0; } }
+#panel { display: none; position: absolute; left: 4vw; top: 50%; width: 560px; padding: 30px 36px; transform-origin: 20% 50%;
+  transform: translateY(-50%) perspective(1100px) rotateY(12deg); box-shadow: 0 30px 60px rgba(0,0,0,.6);
+  background: rgba(12,12,14,.94); border: 1px solid #222; color: #fff; }
+#panel.show { display: block; }
+#panel::before { content: ''; position: absolute; left: 0; top: 0; width: 100%; height: 3px; background: inherit; }
+#panel::before { background: linear-gradient(90deg, #ff2d6f, #ffb300, #00e5ff, #a000ff, #ff2d6f); background-size: 300% 100%; animation: move 5s linear infinite; }
+h1 { margin: 0 0 22px; font-size: 38px; letter-spacing: 6px; font-weight: normal; text-transform: uppercase;
+  background: linear-gradient(90deg, #ff2d6f, #ffb300, #00e5ff, #a000ff, #ff2d6f); background-size: 300% 100%; animation: move 5s linear infinite;
+  -webkit-background-clip: text; background-clip: text; color: transparent; }
+.row { display: flex; gap: 18px; margin-bottom: 14px; }
+.col { flex: 1; }
+label { display: block; margin-bottom: 8px; font-size: 14px; letter-spacing: 3px; color: #888; text-transform: uppercase; }
+input, select { width: 100%; height: 46px; padding: 0 14px; background: #08080a; border: 1px solid #1d1d22; color: #fff;
+  font-family: 'Spookyy', sans-serif; font-size: 18px; outline: none; }
+input:focus, select:focus { border-color: #ff2d6f; box-shadow: 0 0 10px rgba(255,45,111,.5); animation: glow 5s linear infinite; }
+@keyframes glow { 0% { border-color: #ff2d6f; } 25% { border-color: #ffb300; } 50% { border-color: #00e5ff; } 75% { border-color: #a000ff; } 100% { border-color: #ff2d6f; } }
+select option { background: #0c0c0e; }
+.hint { margin-top: 6px; font-size: 14px; color: #666; }
+.chk { display: flex; align-items: center; gap: 10px; margin-top: 10px; font-size: 16px; color: #aaa; cursor: pointer; letter-spacing: 1px; }
+.chk input { width: 18px; height: 18px; }
+.btns { display: flex; justify-content: flex-end; gap: 14px; margin-top: 26px; }
+button { height: 46px; padding: 0 30px; font-family: 'Spookyy', sans-serif; font-size: 18px; letter-spacing: 3px; text-transform: uppercase; cursor: pointer; }
+#cancel { background: #000; color: #fff; border: 1px solid #fff; }
+#save { background: #fff; color: #000; border: 1px solid #fff; }
+button:hover { opacity: .8; }
+
+/* ---- color pickers ---- */
+.sw { display: grid; grid-template-columns: repeat(8, 1fr); gap: 5px; margin-top: 8px; }
+.sw i { display: block; height: 20px; border: 1px solid #000; cursor: pointer; }
+.sw i:hover { outline: 1px solid #fff; }
+.chex { transition: none; }
+.lbl-row { display: flex; justify-content: space-between; align-items: baseline; }
+.lbl-row a { font-size: 13px; letter-spacing: 2px; color: #888; cursor: pointer; text-transform: uppercase; margin-bottom: 8px; }
+.lbl-row a:hover { color: #fff; }
+
+/* ---- font picker (custom dropdown, every item is drawn in its own font) ---- */
+.dd { position: relative; }
+.dd-btn { width: 100%; height: 46px; padding: 0 14px; display: flex; align-items: center; justify-content: space-between;
+  background: #08080a; border: 1px solid #1d1d22; color: #fff; font-size: 20px; letter-spacing: 1px; text-transform: none; text-align: left; }
+.dd-btn:hover { opacity: 1; border-color: #333; }
+.dd.open .dd-btn { border-color: #ff2d6f; box-shadow: 0 0 10px rgba(255,45,111,.5); }
+.dd-arrow { font-size: 12px; color: #888; font-family: sans-serif; }
+.dd-list { display: none; position: absolute; left: 0; right: 0; top: 100%; z-index: 10; max-height: 200px; overflow-y: auto;
+  background: #0c0c0e; border: 1px solid #1d1d22; box-shadow: 0 20px 40px rgba(0,0,0,.7); }
+.dd.open .dd-list { display: block; }
+.dd-item { padding: 10px 14px; font-size: 22px; color: #fff; cursor: pointer; white-space: nowrap; }
+.dd-item:hover, .dd-item.sel { background: #1a1a20; }
+.dd-list::-webkit-scrollbar { width: 6px; }
+.dd-list::-webkit-scrollbar-thumb { background: #333; }
+</style></head><body>
+<div id="root"></div>
+
+<div id="panel">
+  <h1>Manage ID</h1>
+  <div class="row">
+    <div class="col"><label>Player</label>
+      <select id="pick"><option value="">Select an online player</option></select></div>
+    <div class="col"><label>Target ID</label><input id="target" type="number" placeholder="Current ID"></div>
+  </div>
+  <div class="row">
+    <div class="col"><label>New ID</label><input id="newid" type="number" placeholder="Leave empty to keep"></div>
+    <div class="col"><label>Display name</label><input id="name" maxlength="20" placeholder="Name above head">
+      <div class="hint">letters, numbers, _ . - (no spaces)</div></div>
+  </div>
+  <div class="row">
+    <div class="col"><label>Font</label>
+      <div class="dd" id="fontdd">
+        <button type="button" class="dd-btn" id="fontbtn"><span id="fontlabel">Keep current font</span><span class="dd-arrow">&#9660;</span></button>
+        <div class="dd-list" id="fontlist"></div>
+      </div>
+      <div class="hint" id="fonthint">&nbsp;</div></div>
+  </div>
+  <div class="row">
+    <div class="col"><div class="lbl-row"><label>Name color</label><a id="rstN">reset</a></div>
+      <input id="ncol" class="chex" maxlength="7" placeholder="Keep current (#rrggbb)">
+      <div class="sw" id="swN"></div></div>
+    <div class="col"><div class="lbl-row"><label>ID color</label><a id="rstI">reset</a></div>
+      <input id="icol" class="chex" maxlength="7" placeholder="Keep current (#rrggbb)">
+      <div class="sw" id="swI"></div></div>
+  </div>
+  <label class="chk"><input id="reset" type="checkbox"> Reset name to Discord username</label>
+  <div class="btns"><button id="cancel">Cancel</button><button id="save">Save</button></div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const post = (n, d) => fetch(`https://${GetParentResourceName()}/${n}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(d || {}) });
+const root = $('root'), els = [];
+
+// ---- fonts: add a font = copy the file into html/fonts/ and add one line here ----
+const FONTS = [
+  { id: 'spookyy',          name: 'Spookyy (default)',     file: 'Spookyy.otf' },
+  { id: 'jealousy',         name: 'Jealousy',              file: 'fonts/jealousy.ttf' },
+  { id: 'boobaa',           name: 'BooBaa',                file: 'fonts/boobaa.ttf' },
+  { id: 'boxider',          name: 'Boxider',               file: 'fonts/boxider.ttf' },
+  { id: 'darkhell',         name: 'Dark Hell',             file: 'fonts/darkhell.ttf' },
+  { id: 'evilscratch',      name: 'Evil Scratch',          file: 'fonts/evilscratch.ttf' },
+  { id: 'helsinki',         name: 'Helsinki',              file: 'fonts/helsinki.ttf' },
+  { id: 'hightrash',        name: 'High Trash',            file: 'fonts/hightrash.otf' },
+  { id: 'juliametal',       name: 'Julia Metal',           file: 'fonts/juliametal.ttf' },
+  { id: 'lazyarie',         name: 'Lazy Arie',             file: 'fonts/lazyarie.otf' },
+  { id: 'matterguts',       name: 'Matter Guts',           file: 'fonts/matterguts.ttf' },
+  { id: 'metalsoup',        name: 'Metalsoup',             file: 'fonts/metalsoup.ttf' },
+  { id: 'nahla',            name: 'Nahla Script',          file: 'fonts/nahla.otf' },
+  { id: 'hardtimes',        name: 'Hard Times Club',       file: 'fonts/hardtimes.otf' },
+  { id: 'hardtimesoutline', name: 'Hard Times Outline',    file: 'fonts/hardtimesoutline.otf' },
+  { id: 'sheffield',        name: 'Sheffield',             file: 'fonts/sheffield.ttf' },
+];
+const fam = id => (FONTS.some(f => f.id === id) && id !== 'spookyy') ? `'f_${id}', 'Spookyy', sans-serif` : `'Spookyy', sans-serif`;
+const style = document.createElement('style');
+style.textContent = FONTS.map(f => `@font-face { font-family: 'f_${f.id}'; src: url('${f.file}'); }`).join('\n');
+document.head.appendChild(style);
+
+// font dropdown: '' = keep current font of the player
+let pickedFont = '';
+const fontName = id => (FONTS.find(f => f.id === id) || FONTS[0]).name;
+function setFont(id) {
+  pickedFont = id;
+  $('fontlabel').textContent = id ? fontName(id) : 'Keep current font';
+  $('fontlabel').style.fontFamily = fam(id);
+  document.querySelectorAll('.dd-item').forEach(e => e.classList.toggle('sel', e.dataset.id === id));
+}
+$('fontlist').innerHTML = [{ id: '', name: 'Keep current font' }, ...FONTS]
+  .map(f => `<div class="dd-item" data-id="${f.id}" style="font-family:${fam(f.id).replace(/'/g, '&quot;')}">${f.name}</div>`).join('');
+$('fontlist').onclick = e => {
+  const it = e.target.closest('.dd-item'); if (!it) return;
+  setFont(it.dataset.id); $('fontdd').classList.remove('open');
+};
+$('fontbtn').onclick = () => $('fontdd').classList.toggle('open');
+// ---- colors: '' = keep current, 'default' = white, '#rrggbb' = set ----
+const COLORS = ['#ffffff','#ff2d6f','#ff0000','#ff7a00','#ffb300','#ffee00','#a6ff00','#00e676',
+                '#00e5ff','#2979ff','#a000ff','#ff00e5','#9e9e9e','#8d5524','#ff9ecb','#000000'];
+const HEX = /^#[0-9a-fA-F]{6}$/;
+function colorField(inp, grid, rst) {
+  const paint = () => { inp.style.color = HEX.test(inp.value) ? inp.value : (inp.value === 'default' ? '#fff' : ''); };
+  grid.innerHTML = COLORS.map(c => `<i data-c="${c}" style="background:${c}" title="${c}"></i>`).join('');
+  grid.onclick = e => { const i = e.target.closest('i'); if (i) { inp.value = i.dataset.c; paint(); } };
+  rst.onclick = () => { inp.value = 'default'; paint(); };
+  inp.oninput = paint;
+  return { clear() { inp.value = ''; paint(); }, get: () => inp.value.trim() };
+}
+const NCF = colorField($('ncol'), $('swN'), $('rstN'));
+const ICF = colorField($('icol'), $('swI'), $('rstI'));
+let players = [];
+
+window.addEventListener('message', e => {
+  const m = e.data;
+  if (m.action === 'open') {
+    players = m.players || [];
+    $('pick').innerHTML = '<option value="">Select an online player</option>' +
+      (m.players || []).map(p => `<option value="${p.id}">${p.name} #${p.id}</option>`).join('');
+    $('target').value = $('newid').value = $('name').value = ''; $('reset').checked = false;
+    NCF.clear(); ICF.clear(); setFont(''); $('fonthint').innerHTML = '&nbsp;'; $('fontdd').classList.remove('open');
+    $('panel').classList.add('show'); return;
+  }
+  if (m.action === 'close') { $('panel').classList.remove('show'); $('fontdd').classList.remove('open'); return; }
+  const list = m.tags || [];
+  while (els.length < list.length) { const d = document.createElement('div'); d.className = 'tag'; root.appendChild(d); els.push(d); }
+  els.forEach((d, i) => {
+    const t = list[i];
+    if (!t) { d.style.display = 'none'; return; }
+    d.style.display = 'block'; d.style.fontFamily = fam(t.font);
+    if (!d._n) { d._n = document.createElement('span'); d._i = document.createElement('span'); d.append(d._n, ' ', d._i); }
+    d._n.textContent = t.name; d._i.textContent = t.id;
+    d._n.style.color = HEX.test(t.nc || '') ? t.nc : '#fff';
+    d._i.style.color = HEX.test(t.ic || '') ? t.ic : '#fff';
+    d.style.left = (t.x * 100) + '%'; d.style.top = (t.y * 100) + '%';
+  });
+});
+
+$('pick').onchange = () => {
+  $('target').value = $('pick').value;
+  const p = players.find(x => String(x.id) === $('pick').value);
+  $('fonthint').textContent = p ? 'Current font: ' + fontName(p.font || 'spookyy').replace(' (default)', '') : '\u00a0';
+};
+// 3D tilt: panel is angled by default and follows the mouse
+const T = { ry: 12, rx: 0, try: 12, trx: 0 };
+window.addEventListener('mousemove', e => {
+  T.try = 12 + (e.clientX / innerWidth - 0.5) * 18;
+  T.trx = -(e.clientY / innerHeight - 0.5) * 14;
+});
+(function loop() {
+  T.ry += (T.try - T.ry) * 0.08; T.rx += (T.trx - T.rx) * 0.08;
+  $('panel').style.transform = `translateY(-50%) perspective(1100px) rotateY(${T.ry}deg) rotateX(${T.rx}deg)`;
+  requestAnimationFrame(loop);
+})();
+$('cancel').onclick = () => post('close');
+$('save').onclick = () => post('save', { target: $('target').value, newId: $('newid').value, name: $('name').value, reset: $('reset').checked, font: pickedFont, nameColor: NCF.get(), idColor: ICF.get() });
+window.addEventListener('keydown', e => { if (e.key === 'Escape') post('close'); });
+</script></body></html>
